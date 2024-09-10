@@ -13,11 +13,17 @@ tasks:
   build:
     name: dashboard-build
     description: "Build the dashboard website."
+    scopes:
+      - secrets:get:project/mozilla/process-top-crashes/ci
     run:
       using: run-task
       cache-dotcache: true
       cwd: '{checkout}'
       command:
         - bash
-        - -cx
-        - python3 generate.py
+        - -euxo
+        - pipefail
+        - -c
+        - >
+          export REDASH_API_KEY=$(curl http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci | jq -r .secret.redash_api_key);
+          python3 generate.py
