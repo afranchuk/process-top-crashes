@@ -16,6 +16,7 @@ tasks:
     run:
       using: run-task
       cache-dotcache: true
+      cwd: '{checkout}'
       command:
         - bash
         - -cx
