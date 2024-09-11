@@ -7,7 +7,7 @@ task-defaults:
     artifacts:
       - type: directory
         name: "public/dist"
-        path: "/builds/worker/checkouts/src/_dist"
+        path: "/builds/worker/checkouts/vcs/_dist"
 
 tasks:
   build:
@@ -21,7 +21,7 @@ tasks:
       cwd: '{checkout}'
       command:
         - bash
-        - -euxo
+        - -euo
         - pipefail
         - -c
         - >
