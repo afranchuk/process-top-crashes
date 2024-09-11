@@ -40,5 +40,12 @@
         "channels": [ "nightly", "beta", "release" ],
         "redash": "101535",
         "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "nice_name": "Utility Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "101535",
+        "redash_params": [ ]
     }
 ]
