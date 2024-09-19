@@ -1,2 +1,9 @@
 ---
-jobs: []
+jobs:
+  - name: daily-update
+    job:
+      type: decision-task
+      treeherder-symbol: process-top-crashes
+      target-tasks-method: default
+    when:
+      - { hour: 5, minute: 0 }
