@@ -66,8 +66,6 @@ from fx_crash_sig.crash_processor import CrashProcessor
 ## improve signature header information layout, particular fx version numbers. We can easily expand this down and host info similar to crash stats summary pages.
 ##  - filter graphing and the list based on clicks on the header data (version, os, arch)
 
-# python crashes.py -n beta -d beta -u https://sql.telemetry.mozilla.org -k nc2gV50AtsZHUpfmPwtR0F9ysiD8SateThgXUEba -q 79354 -p process_type=gpu -p version=90 -p channel=beta -s "draw_quad_spans<T>"
-
 ###########################################################
 # Globals
 ###########################################################
@@ -89,8 +87,7 @@ MaxAge = 43200
 # Set to True to target a local json file for testing
 LoadLocally = False
 LocalJsonFile = "GPU_Raw_Crash_Data_2021_03_19.json"
-# Default json file url if not specified via the command line.
-jsonUrl = "https://sql.telemetry.mozilla.org/api/queries/78997/results.json?api_key=0XTUThlCYJLBQaKsc8cR4296Y6fasm8vezkZSNPg"
+jsonUrl = None
 
 proc = CrashProcessor(MaxStackDepth, SymbolServerUrl)
 pp = pprint.PrettyPrinter(indent=1, width=260)
