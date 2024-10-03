@@ -25,5 +25,10 @@ tasks:
         - pipefail
         - -c
         - >
-          export REDASH_API_KEY=$(curl http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci | jq -r .secret.redash_api_key);
-          python3 generate.py
+          SECRETS=$(curl http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci);
+          export REDASH_API_KEY=$(echo $SECRETS | jq -r .secret.redash_api_key);
+          NETLIFY_TOKEN=$(echo $SECRETS | jq -r .secret.netlify.token);
+          NETLIFY_SITE_ID=$(echo $SECRETS | jq -r .secret.netlify.site_id);
+          python3 generate.py;
+          (cd _dist; zip -r ../site.zip .);
+          curl -H "Content-Type: application/zip" -H "Authorization: Bearer $NETLIFY_TOKEN" --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys;
