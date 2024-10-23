@@ -1,3 +1,4 @@
 *-reports.json
 *-stats.json
 _dist/*.html
+_dist/*.json
