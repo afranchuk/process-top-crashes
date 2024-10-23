@@ -40,6 +40,7 @@ from fx_crash_sig.crash_processor import CrashProcessor
 # -c (value)    : redash cache value in minutes (0 is the default)
 # -d (name)     : local json cache filename to use (excluding extension)
 # -n (name)     : local html output filename to use (excluding extension)
+# -i (name)     : local json crash id filename to use (excluding extension)
 # -c (count)    : number of reports to process, overrides the default
 # -p (k=v)      : k=v redash query parameters to pass to the query request.
 # -z            : debugging: load and dump the first few records of the local databases. requires -d.
@@ -1454,6 +1455,54 @@ def generateTopCrashReport(reports, stats, totalCrashesProcessed, parameters, ip
                                                  processeddate=dateTime))
   resultFile.close()
 
+def generateTopCrasherIds(output, reports, reportLowerClientLimit):
+  # For each of the top signatures by crash volume:
+  IdsForMostCommon = 10
+  # we want to produce a list of crash ids per configuration:
+  IdsPerConfiguration = 100
+  # where configurations are paritioned on:
+  ConfigurationParameters = ["operatingsystem", "arch", "osversion", "firefoxver"]
+  # and we limit crash ids per client:
+  IdsPerClient = 1
+
+  sigCounter = Counter()
+  for hash in reports:
+    if reports[hash]['clientcount'] < reportLowerClientLimit:
+      continue
+    sigCounter[hash] = len(reports[hash]['reportList'])
+
+  collection = sigCounter.most_common(IdsForMostCommon)
+
+  results = {}
+
+  for hash, _ in collection:
+    report = reports[hash]
+    signature = report['signature']
+
+    clientCount = {}
+    configurationCount = {}
+    ids = []
+
+    for r in report['reportList']:
+      client = r['clientid']
+      configuration = tuple([r[k] for k in ConfigurationParameters])
+
+      configurationCount.setdefault(configuration, 0)
+      clientCount.setdefault(client, 0)
+      if configurationCount[configuration] >= IdsPerConfiguration or clientCount[client] >= IdsPerClient or 'minidumphash' not in r:
+        continue
+
+      configurationCount[configuration] += 1
+      clientCount[client] += 1
+
+      ids.append(r['minidumphash'])
+
+    results[hash] = { "hashes": ids, "description": signature } 
+
+  json.dump(results, open(f"{output}.json", 'w'))
+
+
+
 ###########################################################
 # Process crashes and stacks
 ###########################################################
@@ -1474,11 +1523,12 @@ def main():
 
   dbFilename = "crashreports" #.json
   annoFilename = "annotations"
+  crashIdFilename = None
   cacheValue = MaxAge
   parameters = dict()
   ipcActor = None
 
-  options, remainder = getopt.getopt(sys.argv[1:], 'c:u:n:d:c:k:q:p:a:s:zml:')
+  options, remainder = getopt.getopt(sys.argv[1:], 'c:u:n:i:d:c:k:q:p:a:s:zml:')
   for o, a in options:
     if o == '-u':
       jsonUrl = a
@@ -1486,6 +1536,9 @@ def main():
     elif o == '-n':
       outputFilename = a
       print("output filename: %s.html" %  outputFilename)
+    elif o == '-i':
+      crashIdFilename = a
+      print("crash id filename: %s.json" %  crashIdFilename)
     elif o == '-c':
       cacheValue = int(a)
     elif o == '-d':
@@ -1557,6 +1610,9 @@ def main():
   cacheReports(reports, stats, dbFilename)
 
   generateTopCrashReport(reports, stats, totalCrashesProcessed, parameters, ipcActor, outputFilename, annoFilename, ReportLowerClientLimit)
+
+  if crashIdFilename is not None:
+    generateTopCrasherIds(crashIdFilename, reports, ReportLowerClientLimit)
 
   exit()
 

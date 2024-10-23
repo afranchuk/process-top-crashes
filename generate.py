@@ -47,9 +47,10 @@ def obj_to_cli(o, versions):
 
         out_file_names = get_out_names(o["process_name"], chan, o["ipc_actor"] if "ipc_actor" in o.keys() else None)
         html_file = "_dist/{}".format(out_file_names)
+        crash_json_file = "_dist/{}-crash-ids".format(out_file_names)
         json_file = "{}".format(out_file_names)
 
-        base = "python3 crashes.py -n {} -d {} -u {} -q {}".format(html_file, json_file, "https://sql.telemetry.mozilla.org", o["redash"])
+        base = "python3 crashes.py -n {} -i {} -d {} -u {} -q {}".format(html_file, crash_json_file, json_file, "https://sql.telemetry.mozilla.org", o["redash"])
 
         if "lower_client_limit" in o.keys():
             base += " -l {}".format(o["lower_client_limit"])
