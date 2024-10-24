@@ -32,5 +32,6 @@ tasks:
           NETLIFY_TOKEN=$(echo $SECRETS | jq -r .secret.netlify.token);
           NETLIFY_SITE_ID=$(echo $SECRETS | jq -r .secret.netlify.site_id);
           python3 generate.py;
-          (cd _dist; zip -r ../site.zip .);
+          python3 newSitePostProcess.py;
+          (cd site; zip -r ../site.zip .);
           curl -H "Content-Type: application/zip" -H "Authorization: Bearer $NETLIFY_TOKEN" --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys;
