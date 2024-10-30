@@ -40,7 +40,7 @@ osversions = {}
 arches = MultiselectFilter('arch')
 
 for file in files:
-  matches = re.match(r'([a-z]+)_([a-z]+)-reports\.json', file)
+  matches = re.match(r'processed/([a-z]+)_([a-z]+)-reports\.json', file)
   assert matches is not None
   process = matches.group(1)
   channel = matches.group(2)
