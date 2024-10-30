@@ -1,22 +1,27 @@
 ---
 task-defaults:
-  worker-type: t-linux-large
+  #optimization:
+  #  skip-unless-changed:
+  #    - sitePostProcess.py
+  #    - site/**
+  #    # Copy the process kinds list so that we always run if a process task runs.
+  #    - processes.json
+  #    - generate.py
+  #    - crashes.py
+  worker-type: b-linux
   worker:
     docker-image: {in-tree: linux}
-    max-run-time: 36000
-    artifacts:
-      - type: directory
-        name: "public/crash-ids"
-        path: "/builds/worker/checkouts/vcs/crash-ids"
+    max-run-time: 1800
 
 tasks:
-  build:
-    name: dashboard-build
-    description: "Build the dashboard website."
+  site:
+    name: deploy-site
+    description: "Deploy the crash ping website."
     scopes:
       - secrets:get:project/mozilla/process-top-crashes/ci
-    routes:
-      - "index.mozilla.v2.process-top-crashes.latest.dashboard-build"
+      - queue:get-artifact:public/processed.tar.gz
+    soft-dependencies:
+      - process-pings
     run:
       using: run-task
       cache-dotcache: true
@@ -27,11 +32,11 @@ tasks:
         - pipefail
         - -c
         - >
-          SECRETS=$(curl http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci);
-          export REDASH_API_KEY=$(echo $SECRETS | jq -r .secret.redash_api_key);
+          SECRETS=$(curl -sSLf http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci);
           NETLIFY_TOKEN=$(echo $SECRETS | jq -r .secret.netlify.token);
           NETLIFY_SITE_ID=$(echo $SECRETS | jq -r .secret.netlify.site_id);
-          python3 generate.py;
-          python3 newSitePostProcess.py;
+
+          curl -sSLf http://taskcluster/index/v1/task/mozilla.v2.process-top-crashes.latest.process-pings/artifacts/public/processed.tar.gz | tar -xzf -;
+          python3 sitePostProcess.py;
           (cd site; zip -r ../site.zip .);
           curl -H "Content-Type: application/zip" -H "Authorization: Bearer $NETLIFY_TOKEN" --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys;

@@ -1,0 +1,42 @@
+---
+task-defaults:
+  #optimization:
+  #  skip-unless-changed:
+  #    - processes.json
+  #    - generate.py
+  #    - crashes.py
+  worker-type: t-linux-large
+  worker:
+    docker-image: {in-tree: linux}
+    max-run-time: 36000
+    artifacts:
+      - type: file
+        name: "public/crash-ids.tar.gz"
+        path: "/builds/worker/checkouts/vcs/crash-ids.tar.gz"
+      - type: file
+        name: "public/processed.tar.gz"
+        path: "/builds/worker/checkouts/vcs/processed.tar.gz"
+
+tasks:
+  pings:
+    name: process-pings
+    description: "Process crash ping data."
+    scopes:
+      - secrets:get:project/mozilla/process-top-crashes/ci
+    routes:
+      - "index.mozilla.v2.process-top-crashes.latest.process-pings"
+    run:
+      using: run-task
+      cache-dotcache: true
+      cwd: '{checkout}'
+      command:
+        - bash
+        - -euo
+        - pipefail
+        - -c
+        - >
+          SECRETS=$(curl http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci);
+          export REDASH_API_KEY=$(echo $SECRETS | jq -r .secret.redash_api_key);
+          python3 generate.py;
+          tar -czvf processed.tar.gz processed;
+          tar -czvf crash-ids.tar.gz crash-ids;

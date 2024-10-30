@@ -27,7 +27,7 @@ class MultiselectFilter:
     return self._data
 
 
-files = glob.glob("*-reports.json")
+files = glob.glob("processed/*-reports.json")
 
 entries = []
 details = []

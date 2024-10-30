@@ -18,7 +18,7 @@ RUN apk add --no-cache python3 py3-pip && \
     python3 -m pip install --no-cache --break-system-packages -r /requirements.txt
 
 # Setup other dependencies
-RUN apk add bash coreutils curl git jq zip
+RUN apk add bash coreutils curl git gzip jq tar zip
 
 # %include-run-task
 

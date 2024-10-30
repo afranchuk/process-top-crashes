@@ -25,7 +25,7 @@ def obj_to_cli(o, versions):
 
         out_file_names = get_out_names(o["process_name"], chan, o["ipc_actor"] if "ipc_actor" in o.keys() else None)
         crash_json_file = "crash-ids/{}".format(out_file_names)
-        json_file = "{}".format(out_file_names)
+        json_file = "processed/{}".format(out_file_names)
 
         base = "python3 crashes.py -i {} -d {} -u {} -q {}".format(crash_json_file, json_file, "https://sql.telemetry.mozilla.org", o["redash"])
 
@@ -112,6 +112,7 @@ def generate():
     versions = get_versions()
     
     os.makedirs("crash-ids", exist_ok=True)
+    os.makedirs("processed", exist_ok=True)
     with open("processes.json") as p:
         config = json.load(p)
         for p in config:
