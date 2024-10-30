@@ -6,8 +6,8 @@ task-defaults:
     max-run-time: 36000
     artifacts:
       - type: directory
-        name: "public/dist"
-        path: "/builds/worker/checkouts/vcs/_dist"
+        name: "public/crash-ids"
+        path: "/builds/worker/checkouts/vcs/crash-ids"
 
 tasks:
   build:

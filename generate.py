@@ -12,28 +12,6 @@ from datetime import datetime, timedelta, timezone
 
 MAX_PROCESS = 16
 
-INDEX = """
-<!DOCTYPE html>
-
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8" />
-  <title>Process Crash Reports</title>
-  <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
-  <style>
-    body {{
-      font: 16px Helvetica, Arial, sans-serif;
-      margin: 50px;
-    }}
-  </style>
-</head>
-<body>
-{content}
-  <div class="processeddate">{processeddate}</div>Source code for this dashboard is <a href="https://github.com/mozilla/process-top-crashes">available on Github</a>.
-</body>
-</html>
-"""
-
 def get_out_names(process, chan, actor=None):
     out = "{}_{}".format(process, chan)
     if actor and actor != "none":
@@ -46,11 +24,10 @@ def obj_to_cli(o, versions):
             raise ValueError
 
         out_file_names = get_out_names(o["process_name"], chan, o["ipc_actor"] if "ipc_actor" in o.keys() else None)
-        html_file = "_dist/{}".format(out_file_names)
-        crash_json_file = "_dist/{}-crash-ids".format(out_file_names)
+        crash_json_file = "crash-ids/{}".format(out_file_names)
         json_file = "{}".format(out_file_names)
 
-        base = "python3 crashes.py -n {} -i {} -d {} -u {} -q {}".format(html_file, crash_json_file, json_file, "https://sql.telemetry.mozilla.org", o["redash"])
+        base = "python3 crashes.py -i {} -d {} -u {} -q {}".format(crash_json_file, json_file, "https://sql.telemetry.mozilla.org", o["redash"])
 
         if "lower_client_limit" in o.keys():
             base += " -l {}".format(o["lower_client_limit"])
@@ -133,7 +110,8 @@ def generate():
     all_idx = []
 
     versions = get_versions()
-
+    
+    os.makedirs("crash-ids", exist_ok=True)
     with open("processes.json") as p:
         config = json.load(p)
         for p in config:
@@ -153,10 +131,6 @@ def generate():
 
     for worker in workers:
         worker.join()
-
-    index_html = INDEX.format(content="".join(all_idx), processeddate=datetime.now().isoformat())
-    with open("_dist/index.html", "w") as index_file:
-        index_file.write(index_html)
 
 if __name__ == "__main__":
     if not os.getenv("REDASH_API_KEY"):
