@@ -17,6 +17,10 @@ RUN apk add --no-cache python3 py3-pip && \
     python3 -m pip install --no-cache --upgrade --break-system-packages pip setuptools && \
     python3 -m pip install --no-cache --break-system-packages -r /requirements.txt
 
+# Setup nodejs/npm (to get netlify-cli, necessary to deploy netlify functions)
+RUN apk add --no-cache npm && \
+    npm install -g netlify-cli --force
+
 # Setup other dependencies
 RUN apk add bash coreutils curl git gzip jq tar zip
 

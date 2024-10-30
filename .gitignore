@@ -1,2 +1,6 @@
 crash-ids
 processed
+
+# Local Netlify folder
+.netlify
+netlify/functions/ping-details/data.json

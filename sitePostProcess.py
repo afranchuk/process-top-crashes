@@ -90,4 +90,4 @@ filters = [
   ]
 
 json.dump({"pings": entries, "filters": filters}, open('site/pings.json', 'w'))
-json.dump(details, open('site/netlify/functions/ping-details/data.json', 'w'))
+json.dump(details, open('netlify/functions/ping-details/data.json', 'w'))

@@ -1,4 +1,2 @@
 # useful ignores for testing
 pings.json
-netlify/functions/ping-details/data.json
-.netlify
