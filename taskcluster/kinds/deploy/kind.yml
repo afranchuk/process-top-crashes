@@ -19,7 +19,6 @@ tasks:
     description: "Deploy the crash ping website."
     scopes:
       - secrets:get:project/mozilla/process-top-crashes/ci
-      - queue:get-artifact:public/processed.tar.gz
     soft-dependencies:
       - process-pings
     run:
