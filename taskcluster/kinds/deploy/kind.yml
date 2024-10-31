@@ -35,7 +35,7 @@ tasks:
           NETLIFY_TOKEN=$(echo $SECRETS | jq -r .secret.netlify.token);
           NETLIFY_SITE_ID=$(echo $SECRETS | jq -r .secret.netlify.site_id);
 
-          curl -sSLf http://taskcluster/index/v1/task/mozilla.v2.process-top-crashes.latest.process-pings/artifacts/public/processed.tar.gz | tar -xzf -;
+          curl -sSLf https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/mozilla.v2.process-top-crashes.latest.process-pings/artifacts/public/processed.tar.gz | tar -xzf -;
           python3 sitePostProcess.py;
           (cd site; zip -r ../site.zip .);
           curl -H "Content-Type: application/zip" -H "Authorization: Bearer $NETLIFY_TOKEN" --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys;
