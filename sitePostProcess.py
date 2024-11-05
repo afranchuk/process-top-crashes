@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import base64
 import glob
 import json
 import re
 import sys
+import zlib
 
 class MultiselectFilter:
   def __init__(self, field):
@@ -90,4 +92,10 @@ filters = [
   ]
 
 json.dump({"pings": entries, "filters": filters}, open('site/pings.json', 'w'))
-json.dump(details, open('netlify/functions/ping-details/data.json', 'w'))
+
+# Compress details so that it's in a format easily returned by the netlify function (otherwise it can exceed the 1GB memory limit...).
+def compress(v):
+  return base64.b64encode(zlib.compress(json.dumps(v).encode('utf-8'), wbits = zlib.MAX_WBITS | 16)).decode('utf-8')
+
+compressed_details = list(map(compress, details))
+json.dump(compressed_details, open('netlify/functions/ping-details/data.json', 'w'))

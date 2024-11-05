@@ -5,9 +5,11 @@ export const handler = async (event, context) => {
     const index = parts[parts.length - 1];
     return {
         statusCode: 200,
-        body: JSON.stringify(data[index]),
+        body: data[index],
+        isBase64Encoded: true,
         headers: {
-            'content-type': 'application/json'
+            'content-type': 'application/json',
+            'content-encoding': 'gzip'
         }
     };
 };
