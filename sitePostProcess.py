@@ -5,6 +5,7 @@ import glob
 import json
 import re
 import sys
+import time
 import zlib
 
 class MultiselectFilter:
@@ -91,7 +92,11 @@ filters = [
     versions.eject(),
   ]
 
-json.dump({"pings": entries, "filters": filters}, open('site/pings.json', 'w'))
+meta = {
+    "processUnixTime": time.time()
+}
+
+json.dump({"pings": entries, "filters": filters, "meta": meta}, open('site/pings.json', 'w'))
 
 # Compress details so that it's in a format easily returned by the netlify function (otherwise it can exceed the 1GB memory limit...).
 def compress(v):

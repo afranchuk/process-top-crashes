@@ -24,6 +24,10 @@ a:visited {
   text-decoration: none;
 }
 
+#metainfo {
+  padding-top: 2px;
+}
+
 #filters {
   display: flex;
   flex-wrap: wrap;
@@ -376,7 +380,6 @@ a:visited {
   padding-left: 10px;
   overflow-x: auto;
   white-space: nowrap;
-  border-top: 1px solid lightgray;
 }
 
 .stackline {
