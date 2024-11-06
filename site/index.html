@@ -43,6 +43,7 @@
   <script type="text/javascript">
     let pings = [];
     let filters = [];
+    let meta = {};
     let filtersByLabel = null;
     let loaded = null;
 
@@ -56,6 +57,7 @@
         return p;
       }).toArray();
       filters = data.filters;
+      meta = data.meta;
 
       createFilters();
     });
@@ -257,6 +259,12 @@
         }
       }
 
+      const dates = Array.from(pings.reduce((set, v) => set.add(v["date"]), new Set())).sort();
+      const mindate = dates[0];
+      const maxdate = dates[dates.length - 1];
+
+      document.getElementById("metainfo").innerHTML = `Crash ping data from ${mindate} to ${maxdate}, processed at ${new Date(meta.processUnixTime * 1000)}.`;
+
       updateFilters();
     }
 
@@ -374,6 +382,7 @@
   </script>
 </head>
 <body>
+  <div id="metainfo"></div>
   <div id="filters"></div>
 
   <div id="sort">
