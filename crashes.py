@@ -1066,11 +1066,7 @@ def main():
       print("No user key; use -k or REDASH_API_KEY")
       exit()
 
-  if ipcActor is not None:
-    if ipcActor == "none":
-      parameters["utility_actor_name_op"] = "IS NULL"
-    else:
-      parameters["utility_actor_name_op"] = 'LIKE "%{}%"'.format(ipcActor)
+  parameters["utility_actor"] = ipcActor or "NONE"
 
   if len(userKey) == 0:
     print("missing user api key.")

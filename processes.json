@@ -3,49 +3,105 @@
         "process_name": "main",
         "nice_name": "Parent Process",
         "channels": [ "nightly", "beta", "release" ],
-        "redash": "101535",
+        "redash": "103617",
         "redash_params": [ ]
     },
     {
         "process_name": "gpu",
         "nice_name": "GPU Process",
         "channels": [ "nightly", "beta", "release" ],
-        "redash": "101535",
+        "redash": "103617",
         "redash_params": [ ]
     },
     {
         "process_name": "rdd",
         "nice_name": "RDD Process",
         "channels": [ "nightly", "beta", "release" ],
-        "redash": "101535",
+        "redash": "103617",
         "redash_params": [ ]
     },
     {
         "process_name": "socket",
         "nice_name": "Socket Process",
         "channels": [ "nightly", "beta", "release" ],
-        "redash": "101535",
+        "redash": "103617",
         "redash_params": [ ]
     },
     {
         "process_name": "content",
         "nice_name": "Content Process",
         "channels": [ "nightly", "beta", "release" ],
-        "redash": "101535",
+        "redash": "103617",
         "redash_params": [ ]
     },
     {
         "process_name": "gmplugin",
         "nice_name": "Gecko Media Plugin Process",
         "channels": [ "nightly", "beta", "release" ],
-        "redash": "101535",
+        "redash": "103617",
         "redash_params": [ ]
     },
     {
         "process_name": "utility",
-        "nice_name": "Utility Process",
+        "nice_name": "Utility (no actor) Process",
         "channels": [ "nightly", "beta", "release" ],
-        "redash": "101535",
+        "redash": "103617",
+        "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "ipc_actor": "audio-decoder-generic",
+        "nice_name": "Utility (Generic Audio) Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "103617",
+        "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "ipc_actor": "audio-decoder-applemedia",
+        "nice_name": "Utility (AppleMedia Audio) Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "103617",
+        "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "ipc_actor": "audio-decoder-wmf",
+        "nice_name": "Utility (WMF Audio) Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "103617",
+        "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "ipc_actor": "mf-media-engine",
+        "nice_name": "Utility (MF Media Engine) Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "103617",
+        "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "ipc_actor": "js-oracle",
+        "nice_name": "Utility (JS Oracle) Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "103617",
+        "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "ipc_actor": "windows-utils",
+        "nice_name": "Utility (Windows Utils) Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "103617",
+        "redash_params": [ ]
+    },
+    {
+        "process_name": "utility",
+        "ipc_actor": "windows-file-dialog",
+        "nice_name": "Utility (Windows File Dialog) Process",
+        "channels": [ "nightly", "beta", "release" ],
+        "redash": "103617",
         "redash_params": [ ]
     }
 ]
