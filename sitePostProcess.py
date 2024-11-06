@@ -25,6 +25,10 @@ class MultiselectFilter:
     self._data['values'].add(value)
     return self
 
+  def add_unset(self):
+    self._data['unset'] = True
+    return self
+
   def eject(self):
     self._data['values'] = list(self._data['values'])
     return self._data
@@ -37,19 +41,26 @@ details = []
 
 channels = MultiselectFilter('channel')
 processes = MultiselectFilter('process')
+ipcactors = MultiselectFilter('ipc_actor').requires('process', 'utility').set_pretty('utility ipc actor').add_unset()
 versions = MultiselectFilter('version')
 oses = MultiselectFilter('os')
 osversions = {}
 arches = MultiselectFilter('arch')
 
 for file in files:
-  matches = re.match(r'processed/([a-z]+)_([a-z]+)-reports\.json', file)
+  matches = re.match(r'processed/([a-z]+)_([a-z]+)(_[a-z-]+)?-reports\.json', file)
   assert matches is not None
   process = matches.group(1)
   channel = matches.group(2)
+  ipc_actor = matches.group(3)
+  if ipc_actor is not None:
+    ipc_actor = ipc_actor[1:]
 
   channels.add(channel)
   processes.add(process)
+  if ipc_actor is not None:
+    ipcactors.add(ipc_actor)
+
 
   data = json.load(open(file))
   for sighash, sigdata in data.items():
@@ -63,7 +74,7 @@ for file in files:
         osversions[os] = MultiselectFilter('osversion').set_pretty(f"{os} version").requires('os', os)
       osversions[os].add(report["osversion"])
 
-      entries.append({
+      entry = {
           "channel": channel,
           "process": process,
           "version": report["firefoxver"],
@@ -75,7 +86,12 @@ for file in files:
           "clientid": report["clientid"],
           "reason": report["crashreason"],
           "type": report["type"],
-      })
+      }
+
+      if ipc_actor is not None:
+        entry["ipc_actor"] = ipc_actor
+
+      entries.append(entry)
 
       details.append({
         "crashid": report["crashid"],
@@ -86,6 +102,7 @@ for file in files:
 filters = [
     channels.eject(),
     processes.eject(),
+    ipcactors.eject(),
     oses.eject()
   ] + list(map(lambda x: x.eject(), osversions.values())) + [
     arches.eject(),

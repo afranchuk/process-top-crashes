@@ -44,24 +44,6 @@ def obj_to_cli(o, versions):
         rv = base + " " + " ".join(map(lambda x: "-p {}".format(x), params))
         yield rv
 
-def obj_to_idx(o):
-    template_process = """
-  {nice_name} <a href="https://crash-stats.mozilla.org/search/?product=Firefox&process_type={process_type}">(crash-stats)</a><br />
-  <ul>{links}
-  </ul>
-  """
-
-    template_process_channel = """
-    <li><a href="{filename}.html">{nice_channel}</a></li>"""
-
-    all_channels = ""
-
-    for chan in o["channels"]:
-        filename = get_out_names(o["process_name"], chan, o["ipc_actor"] if "ipc_actor" in o.keys() else None)
-        all_channels += template_process_channel.format(filename=filename, nice_channel=chan.capitalize())
-
-    yield template_process.format(nice_name=o["nice_name"], process_type=o["process_name"], links=all_channels)
-
 def fn_worker(q):
     while not q.empty():
         cmd = q.get()
@@ -107,7 +89,6 @@ def get_versions():
 
 def generate():
     all_cli = []
-    all_idx = []
 
     versions = get_versions()
     
@@ -118,8 +99,6 @@ def generate():
         for p in config:
             for cli in obj_to_cli(p, versions):
                 all_cli.append(cli)
-            for idx in obj_to_idx(p):
-                all_idx.append(idx)
 
     queue = mp.Queue()
     workers = [mp.Process(target=fn_worker, args=(queue, )) for _ in range(MAX_PROCESS)]

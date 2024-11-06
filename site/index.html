@@ -41,6 +41,7 @@
     window.makeSparkline = (el, data) => sparkline(el, data, sloptions);
   </script>
   <script type="text/javascript">
+    const UNSET_VALUE = "__unset";
     let pings = [];
     let filters = [];
     let meta = {};
@@ -241,12 +242,14 @@
           const field = entry.field;
           const label = entry.pretty || entry.field;
           const values = entry.values;
-          const options = values.sort().map(v => `<option value="${v}" selected>${v}</option>`);
+          const unset_option = entry.unset ? `<option class="filter-option" value="${UNSET_VALUE}" selected>(none)</option>` : "";
+          const options = values.sort().map(v => `<option class="filter-option" value="${v}" selected>${v}</option>`);
 
           const outer = templateElement(`
             <div class="filter">
               <label for="${field}" onclick="selectAll(event.target)" title="Click to select all" style="cursor:pointer">${label}</label>
               <select name="${field}" multiple onchange="updateFilters()">
+                ${unset_option}
                 ${options.join("")}
               </select>
             </div>
@@ -258,6 +261,8 @@
           el.appendChild(outer);
         }
       }
+
+      addTooltips("filter-option");
 
       const dates = Array.from(pings.reduce((set, v) => set.add(v["date"]), new Set())).sort();
       const mindate = dates[0];
@@ -308,7 +313,8 @@
               select.setAttribute("disabled", "");
             } else {
               select.removeAttribute("disabled");
-              selectedFilters.push(p => !filterActive(p, filter) || values.has(p[field]));
+              selectedFilters.push(p => !filterActive(p, filter)
+                || (field in p ? values.has(p[field]) : values.has(UNSET_VALUE)));
             }
           }
         }

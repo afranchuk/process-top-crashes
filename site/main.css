@@ -43,7 +43,13 @@ a:visited {
 }
 
 .filter select {
-  width: 100px;
+  min-width: 8em;
+  max-width: 16em;
+}
+
+.filter select option {
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .filter select option:checked {
