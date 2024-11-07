@@ -10,6 +10,9 @@ task-defaults:
   #    - crashes.py
   run-on-git-branches:
     - main
+  run-on-tasks-for:
+    - cron
+    - github-push
   worker-type: b-linux
   worker:
     docker-image: {in-tree: linux}
