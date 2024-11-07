@@ -8,6 +8,8 @@ task-defaults:
   #    - processes.json
   #    - generate.py
   #    - crashes.py
+  run-on-git-branches:
+    - main
   worker-type: b-linux
   worker:
     docker-image: {in-tree: linux}
