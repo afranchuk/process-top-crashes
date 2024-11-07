@@ -8,6 +8,26 @@ import sys
 import time
 import zlib
 
+OS_VERSION_NAMES = {
+  "Mac": {
+    "19.": 'macOS 10.15 "Catalina"',
+    "20.": 'macOS 11 "Big Sur"',
+    "21.": 'macOS 12 "Monterey"',
+    "22.": 'macOS 13 "Ventura"',
+    "23.": 'macOS 14 "Sonoma"',
+    "24.": 'macOS 15 "Sequoia"',
+  },
+  "Windows": {
+    "6.0": 'Windows Vista',
+    "6.1": 'Windows 7',
+    "6.2": 'Windows 8',
+    "6.3": 'Windows 8.1',
+    "10.0": 'Windows 10',
+    "11.0": 'Windows 11',
+  },
+}
+
+
 class MultiselectFilter:
   def __init__(self, field):
     self._data = {'type': 'multiselect', 'field': field, 'values': set()}
@@ -33,12 +53,6 @@ class MultiselectFilter:
     self._data['values'] = list(self._data['values'])
     return self._data
 
-
-files = glob.glob("processed/*-reports.json")
-
-entries = []
-details = []
-
 channels = MultiselectFilter('channel')
 processes = MultiselectFilter('process')
 ipcactors = MultiselectFilter('ipc_actor').requires('process', 'utility').set_pretty('utility ipc actor').add_unset()
@@ -47,7 +61,10 @@ oses = MultiselectFilter('os')
 osversions = {}
 arches = MultiselectFilter('arch')
 
-for file in files:
+
+entries = []
+details = []
+for file in glob.glob("processed/*-reports.json"):
   matches = re.match(r'processed/([a-z]+)_([a-z]+)(_[a-z-]+)?-reports\.json', file)
   assert matches is not None
   process = matches.group(1)
@@ -98,13 +115,28 @@ for file in files:
         "stack": report["stack"],
       })
 
+def os_versions_filters(osversions):
+  def choose_version_entry(names, v):
+    for prefix, name in names.items():
+      if v.startswith(prefix):
+        return { "value": v, "label": f"{name} ({v})" }
+    return v
+
+  def convert_version_values(os, flt):
+    flt = flt.eject()
+    if os in OS_VERSION_NAMES:
+      flt['values'] = [choose_version_entry(OS_VERSION_NAMES[os], v) for v in flt.pop('values')]
+    return flt
+
+  return [convert_version_values(os, flt) for os, flt in osversions.items()]
+
 # Filters with requires _must_ be listed after the filters that they require, for UX clarity.
 filters = [
     channels.eject(),
     processes.eject(),
     ipcactors.eject(),
     oses.eject()
-  ] + list(map(lambda x: x.eject(), osversions.values())) + [
+  ] + os_versions_filters(osversions) + [
     arches.eject(),
     versions.eject(),
   ]

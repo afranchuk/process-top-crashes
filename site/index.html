@@ -125,7 +125,7 @@
 
     function addTooltips(klass) {
       for (const el of document.getElementsByClassName(klass)) {
-        if (el.offsetWidth < el.scrollWidth) {
+        if (el.offsetWidth <= el.scrollWidth) {
           el.setAttribute('title', el.innerText);
         }
       }
@@ -243,7 +243,9 @@
           const label = entry.pretty || entry.field;
           const values = entry.values;
           const unset_option = entry.unset ? `<option class="filter-option" value="${UNSET_VALUE}" selected>(none)</option>` : "";
-          const options = values.sort().map(v => `<option class="filter-option" value="${v}" selected>${v}</option>`);
+          const options = values.map(v => typeof v === "string" ? { value: v, label: v } : v)
+            .sort((a, b) => a.value.localeCompare(b.value))
+            .map(v => `<option class="filter-option" value="${v.value}" selected>${v.label}</option>`);
 
           const outer = templateElement(`
             <div class="filter">
