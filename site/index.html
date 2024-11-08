@@ -41,6 +41,7 @@
     window.makeSparkline = (el, data) => sparkline(el, data, sloptions);
   </script>
   <script type="text/javascript">
+    const UNSET_LABEL = "(none)";
     const UNSET_VALUE = "__unset";
     let pings = [];
     let filters = [];
@@ -222,7 +223,7 @@
         if (counts.size == 0) continue;
         const label = filter.pretty || filter.field;
         const c = Array.from(counts).sort(([ka,a],[kb,b]) => b-a)
-          .map(([k,v]) => `<span title="${v} crashes">${k}</span>`)
+          .map(([k,v]) => `<span title="${v} crashes">${k || UNSET_LABEL}</span>`)
           .join(", ");
         const el = templateElement(`<p><b>${label}</b>: ${c}</p>`);
         header.appendChild(el);
@@ -242,7 +243,7 @@
           const field = entry.field;
           const label = entry.pretty || entry.field;
           const values = entry.values;
-          const unset_option = entry.unset ? `<option class="filter-option" value="${UNSET_VALUE}" selected>(none)</option>` : "";
+          const unset_option = entry.unset ? `<option class="filter-option" value="${UNSET_VALUE}" selected>${UNSET_LABEL}</option>` : "";
           const options = values.map(v => typeof v === "string" ? { value: v, label: v } : v)
             .sort((a, b) => a.value.localeCompare(b.value))
             .map(v => `<option class="filter-option" value="${v.value}" selected>${v.label}</option>`);
