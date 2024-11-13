@@ -223,7 +223,7 @@
         if (counts.size == 0) continue;
         const label = filter.pretty || filter.field;
         const c = Array.from(counts).sort(([ka,a],[kb,b]) => b-a)
-          .map(([k,v]) => `<span title="${v} crashes">${k || UNSET_LABEL}</span>`)
+          .map(([k,v]) => `<span title="${v} crashes">${optionDetailsFor(filter, k).label}</span>`)
           .join(", ");
         const el = templateElement(`<p><b>${label}</b>: ${c}</p>`);
         header.appendChild(el);
@@ -236,15 +236,30 @@
       addTooltips("detail-meta-data-reason");
     }
 
+    function optionDetailsFor(filter, v) {
+      if (v === undefined) {
+        return { value: UNSET_VALUE, label: UNSET_LABEL };
+      }
+      if (!filter.optionsDetails) {
+        filter.optionsDetails = new Map(filter.values.map(v => {
+          const obj = typeof v === "string" ? { value: v, label: v } : v;
+          return [obj.value, obj];
+        }));
+      }
+      return filter.optionsDetails.get(v);
+    }
+
     function createFilters() {
       const el = document.getElementById("filters");
       for (const entry of filters) {
         if (entry.type == 'multiselect') {
           const field = entry.field;
           const label = entry.pretty || entry.field;
-          const values = entry.values;
-          const unset_option = entry.unset ? `<option class="filter-option" value="${UNSET_VALUE}" selected>${UNSET_LABEL}</option>` : "";
-          const options = values.map(v => typeof v === "string" ? { value: v, label: v } : v)
+          const values = entry.values.map(v => v.value || v);
+          if (entry.unset) {
+            values.unshift(undefined);
+          }
+          const options = values.map(v => optionDetailsFor(entry, v))
             .sort((a, b) => a.value.localeCompare(b.value))
             .map(v => `<option class="filter-option" value="${v.value}" selected>${v.label}</option>`);
 
@@ -252,7 +267,6 @@
             <div class="filter">
               <label for="${field}" onclick="selectAll(event.target)" title="Click to select all" style="cursor:pointer">${label}</label>
               <select name="${field}" multiple onchange="updateFilters()">
-                ${unset_option}
                 ${options.join("")}
               </select>
             </div>
