@@ -84,7 +84,7 @@ MinCrashCount = 1
 # in the final report. Limits the size of the resulting html.
 MaxReportCount = 100
 # Default redash max_age value in minutes
-MaxAge = 43200
+MaxAge = 12*60*60
 # Set to True to target a local json file for testing
 LoadLocally = False
 LocalJsonFile = "GPU_Raw_Crash_Data_2021_03_19.json"
@@ -106,6 +106,17 @@ def generateSignature(payload):
     return proc.get_signature_from_symbolicated(payload).signature
   except:
     return ""
+
+def to_snake_case(k):
+  return re.sub(r'(?<!^)(?=[A-Z])', '_', k).lower()
+
+def keys_to_snake_case(value):
+  if type(value) is dict:
+    return {to_snake_case(k): keys_to_snake_case(v) for k, v in value.items()}
+  elif type(value) is list:
+    return [keys_to_snake_case(v) for v in value]
+  else:
+    return value
 
 ###########################################################
 # Progress indicator
@@ -456,6 +467,9 @@ def processRedashDataset(dbFilename, jsonUrl, queryId, userKey, cacheValue, para
 
     # Load the json stack traces from recrow
     stackTraces = json.loads(recrow["stack_traces"])
+    # Android stack traces are camelCase rather than snake_case (bug 1931891
+    # should fix this).
+    stackTraces = keys_to_snake_case(stackTraces)
 
     # crashId = props['crash_id']
     crashDate = str(datetime.fromisoformat(recrow['crash_time']).date())
@@ -496,9 +510,6 @@ def processRedashDataset(dbFilename, jsonUrl, queryId, userKey, cacheValue, para
       totals['alreadyProcessed'] += 1
       progress(totals['processed'], crashesToProcess)
       continue
-
-    def base_addr_fixup(m):
-      return m
 
     # Fixup stackTraces fields to what is expected
     if "modules" in stackTraces:
