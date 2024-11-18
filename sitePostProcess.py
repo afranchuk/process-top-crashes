@@ -18,12 +18,21 @@ OS_VERSION_NAMES = {
     "24.": 'macOS 15 "Sequoia"',
   },
   "Windows": {
+    "5.1": 'Windows XP',
+    "5.2": 'Windows XP',
     "6.0": 'Windows Vista',
     "6.1": 'Windows 7',
     "6.2": 'Windows 8',
     "6.3": 'Windows 8.1',
-    "10.0": 'Windows 10',
-    "11.0": 'Windows 11',
+    "10.0@10": 'Windows 10',
+    "10.0@14": 'Windows 10',
+    "10.0@15": 'Windows 10',
+    "10.0@16": 'Windows 10',
+    "10.0@17": 'Windows 10',
+    "10.0@18": 'Windows 10',
+    "10.0@19": 'Windows 10',
+    "10.0@22": 'Windows 11',
+    "10.0@26": 'Windows 11',
   },
 }
 
