@@ -118,6 +118,12 @@ def keys_to_snake_case(value):
   else:
     return value
 
+def module_debug_file_basenames(stack_traces):
+  if "modules" in stack_traces:
+    for module in stack_traces["modules"]:
+      if "debug_file" in module:
+        module["debug_file"] = os.path.basename(module["debug_file"])
+
 ###########################################################
 # Progress indicator
 ###########################################################
@@ -470,6 +476,9 @@ def processRedashDataset(dbFilename, jsonUrl, queryId, userKey, cacheValue, para
     # Android stack traces are camelCase rather than snake_case (bug 1931891
     # should fix this).
     stackTraces = keys_to_snake_case(stackTraces)
+    # Fix the debug file entries of modules to only be the file basenames. This
+    # is fixed by bug 1931237 but it will take a while to get into release.
+    module_debug_file_basenames(stackTraces)
 
     # crashId = props['crash_id']
     crashDate = str(datetime.fromisoformat(recrow['crash_time']).date())
