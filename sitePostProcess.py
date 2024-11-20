@@ -8,6 +8,13 @@ import sys
 import time
 import zlib
 
+def windows_nt_10_label(version):
+  [ntversion, build] = version.split("@")
+  if int(build) >= 22000:
+    return 'Windows 11'
+  else:
+    return 'Windows 10'
+
 OS_VERSION_NAMES = {
   "Mac": {
     "19.": 'macOS 10.15 "Catalina"',
@@ -24,24 +31,7 @@ OS_VERSION_NAMES = {
     "6.1": 'Windows 7',
     "6.2": 'Windows 8',
     "6.3": 'Windows 8.1',
-    "10.0@10": 'Windows 10',
-    "10.0@11": 'Windows 10',
-    "10.0@12": 'Windows 10',
-    "10.0@13": 'Windows 10',
-    "10.0@14": 'Windows 10',
-    "10.0@15": 'Windows 10',
-    "10.0@16": 'Windows 10',
-    "10.0@17": 'Windows 10',
-    "10.0@18": 'Windows 10',
-    "10.0@19": 'Windows 10',
-    "10.0@20": 'Windows 10',
-    "10.0@21": 'Windows 10',
-    "10.0@22": 'Windows 11',
-    "10.0@23": 'Windows 11',
-    "10.0@24": 'Windows 11',
-    "10.0@25": 'Windows 11',
-    "10.0@26": 'Windows 11',
-    "10.0@27": 'Windows 11',
+    "10.0": windows_nt_10_label
   },
 }
 
@@ -137,7 +127,8 @@ def os_versions_filters(osversions):
   def choose_version_entry(names, v):
     for prefix, name in names.items():
       if v.startswith(prefix):
-        return { "value": v, "label": f"{name} ({v})" }
+        label = name(v) if callable(name) else name
+        return { "value": v, "label": f"{label} ({v})", "group": label }
     return v
 
   def convert_version_values(os, flt):

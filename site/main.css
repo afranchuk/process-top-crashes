@@ -45,6 +45,12 @@ a:visited {
 .filter select {
   min-width: 8em;
   max-width: 16em;
+  width: 100%;
+}
+
+.filter .group-toggle {
+  float: right;
+  margin-left: 1em;
 }
 
 .filter select option {
