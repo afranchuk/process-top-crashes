@@ -316,6 +316,17 @@ def escape(text):
 # Crash Report Utilities
 ###########################################################
 
+def processJavaStack(frames):
+  dataStack = list()
+
+  for ind, frame in enumerate(frames):
+    className = frame.get("className")
+    methodName = frame.get("methodName")
+    framestr = className + "." + methodName if className and methodName else className or methodName or ''
+    dataStack.append({ 'index': ind, 'module': frame.get("file") or '', 'frame': framestr, 'srcUrl': ''})
+
+  return dataStack
+
 def processStack(frames):
   # Normalized function names we can consider the same in calculating
   # unique reports. We replace the regex match with the key using sub.
@@ -472,13 +483,15 @@ def processRedashDataset(dbFilename, jsonUrl, queryId, userKey, cacheValue, para
     #devDesc = recrow['device_description']
 
     # Load the json stack traces from recrow
-    stackTraces = json.loads(recrow["stack_traces"])
+    stackTraces = json.loads(recrow["stack_traces"] or "{}") or {}
     # Android stack traces are camelCase rather than snake_case (bug 1931891
     # should fix this).
     stackTraces = keys_to_snake_case(stackTraces)
     # Fix the debug file entries of modules to only be the file basenames. This
     # is fixed by bug 1931237 but it will take a while to get into release.
     module_debug_file_basenames(stackTraces)
+
+    javaException = json.loads(recrow["java_exception"] or "{}") or {}
 
     # crashId = props['crash_id']
     crashDate = str(datetime.fromisoformat(recrow['crash_time']).date())
@@ -520,32 +533,96 @@ def processRedashDataset(dbFilename, jsonUrl, queryId, userKey, cacheValue, para
       progress(totals['processed'], crashesToProcess)
       continue
 
-    # Fixup stackTraces fields to what is expected
-    if "modules" in stackTraces:
-      for m in stackTraces["modules"]:
-        m["base_addr"] = m["base_address"]
-
-    if not all(ind in stackTraces for ind in ["crash_thread", "crash_type", "modules", "threads"]):
+    if not all(ind in stackTraces for ind in ["crash_thread", "crash_type", "modules", "threads"]) and not "stack" in javaException:
       continue
 
-    # symbolicate and return payload result
-    payload = symbolicate({ "normalized_os": operatingSystem, "payload": {
-      "metadata": {
-        # TODO async_shutdown_timeout
-        "ipc_channel_error": ipcChannelError,
-        "oom_allocation_size": oomSize,
-        "moz_crash_reason": crashReason,
-      },
-      "stack_traces": {
-        "crash_info": {
-          "crashing_thread": stackTraces["crash_thread"],
-          "type": stackTraces["crash_type"],
+    signature = None
+    stack = None
+    crash_type = None
+
+    if "stack" in javaException:
+      # Get the java exception signature (rather than symbolicating; the native
+      # stack trace is more than likely null)
+
+      messages = javaException.get("messages") or []
+      firstMessage = messages[0] if len(messages) > 0 else ""
+      front = firstMessage.split(":", 1)[0]
+
+      # Use exception naming conventions to check whether this is probably an exception name
+      stacktrace = {}
+      if front.endswith("Exception"):
+        exc_module, exc_type = front.rsplit(".", 1)
+        stacktrace["module"] = exc_module
+        stacktrace["type"] = exc_type
+
+      def makeFrame(f):
+        return {
+            "module": f.get("className"),
+            "function": f.get("methodName"),
+            "filename": f.get("file")
+        }
+
+      stacktrace["frames"] = list(map(makeFrame, javaException["stack"]))
+
+      signature = generateSignature({
+        "java_exception": {
+          "exception": {
+            "values": [{
+              "stacktrace": stacktrace
+            }]
+          }
+        }
+      })
+
+      stack = processJavaStack(javaException["stack"])
+      crash_type = 'Java exception'
+
+    else:
+      # Fixup stackTraces fields to what is expected
+      if "modules" in stackTraces:
+        for m in stackTraces["modules"]:
+          m["base_addr"] = m["base_address"]
+
+      # symbolicate and return payload result
+      payload = symbolicate({ "normalized_os": operatingSystem, "payload": {
+        "metadata": {
+          # TODO async_shutdown_timeout
+          "ipc_channel_error": ipcChannelError,
+          "oom_allocation_size": oomSize,
+          "moz_crash_reason": crashReason,
         },
-        "modules": stackTraces["modules"],
-        "threads": stackTraces["threads"]
-      }
-    }})
-    signature = generateSignature(payload)
+        "stack_traces": {
+          "crash_info": {
+            "crashing_thread": stackTraces["crash_thread"],
+            "type": stackTraces["crash_type"],
+          },
+          "modules": stackTraces["modules"],
+          "threads": stackTraces["threads"]
+        }
+      }})
+      signature = generateSignature(payload)
+
+      # pull stack information for the crashing thread
+      try:
+        crashingThreadIndex = payload['crashing_thread']
+      except KeyError:
+        #print("KeyError on crashing_thread for report");
+        continue
+
+      threads = payload['threads']
+      
+      try:
+        frames = threads[crashingThreadIndex]['frames']
+      except IndexError:
+        print("IndexError while indexing crashing thread");
+        continue
+      except TypeError:
+        print("TypeError while indexing crashing thread");
+        continue
+
+      # build up a pretty stack
+      stack = processStack(frames)
+      crash_type = stackTraces["crash_type"]
 
     if skipProcessSignature(signature):
       totals['processed'] += 1
@@ -553,26 +630,6 @@ def processRedashDataset(dbFilename, jsonUrl, queryId, userKey, cacheValue, para
       progress(totals['processed'], crashesToProcess)
       continue
 
-    # pull stack information for the crashing thread
-    try:
-      crashingThreadIndex = payload['crashing_thread']
-    except KeyError:
-      #print("KeyError on crashing_thread for report");
-      continue
-
-    threads = payload['threads']
-    
-    try:
-      frames = threads[crashingThreadIndex]['frames']
-    except IndexError:
-      print("IndexError while indexing crashing thread");
-      continue
-    except TypeError:
-      print("TypeError while indexing crashing thread");
-      continue
-
-    # build up a pretty stack
-    stack = processStack(frames)
 
     # generate a tracking hash 
     hash = generateSignatureHash(signature, operatingSystem, operatingSystemVer, arch, firefoxVer)
@@ -605,7 +662,7 @@ def processRedashDataset(dbFilename, jsonUrl, queryId, userKey, cacheValue, para
       'crashdate':          crashDate,
       'stack':              stack,
       'oomsize':            oomSize,
-      'type':               stackTraces['crash_type'],
+      'type':               crash_type,
       'minidumphash':       minidumpHash,
       'crashreason':        crashReason,
       'startup':            startupCrash,
