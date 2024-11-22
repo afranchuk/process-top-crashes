@@ -88,6 +88,28 @@
       }
     }
 
+    class Cached {
+      #dirty = true;
+      #value;
+      #update;
+
+      constructor(update) {
+        this.#update = update;
+      }
+
+      get value() {
+        if (this.#dirty) {
+          this.#value = this.#update();
+          this.#dirty = false;
+        }
+        return this.#value;
+      }
+
+      invalidate() {
+        this.#dirty = true;
+      }
+    }
+
     class MultiSelectFilter {
       // The filter data field.
       #field;
@@ -105,11 +127,8 @@
       #grouped = false;
       // The associated `select` element.
       #selectElement;
-
-      // Whether stateful information needs to be updated.
-      #dirty = true;
-      // The Set of currently selected values.
-      #selected;
+      // The group toggle element, if any groups exist.
+      #groupToggle;
 
       constructor(filterInfo) {
         if (filterInfo.type !== "multiselect") {
@@ -150,18 +169,19 @@
         return this.#label;
       }
 
-      get selected() {
-        if (this.#dirty) {
-          let values = Array.from(this.#selectElement.selectedOptions);
-          if (this.#grouped) {
-            values = values.flatMap(o => this.#groupedOptions.get(o.value).map(v => v.fieldValue));
-          } else {
-            values = values.map(o => this.#options.get(o.value).fieldValue);
-          }
-          this.#selected = new Set(values);
-          this.#dirty = false;
+      // The Set of currently selected values.
+      #selected = new Cached(() => {
+        let values = Array.from(this.#selectElement.selectedOptions);
+        if (this.#grouped) {
+          values = values.flatMap(o => this.#groupedOptions.get(o.value).map(v => v.fieldValue));
+        } else {
+          values = values.map(o => this.#options.get(o.value).fieldValue);
         }
-        return this.#selected;
+        return new Set(values);
+      });
+
+      get selected() {
+        return this.#selected.value;
       }
 
       get #hasGroups() {
@@ -217,24 +237,17 @@
         });
 
         this.#selectElement.addEventListener("change", e => {
-          this.#dirty = true;
+          this.#selected.invalidate();
+          this.#state.invalidate();
           updateFilters();
         });
 
         if (groupToggle) {
-          el.getElementsByClassName("group-toggle")[0].addEventListener("click", e => {
+          this.#groupToggle = el.getElementsByClassName("group-toggle")[0];
+          this.#groupToggle.addEventListener("click", e => {
             if (this.#selectElement.disabled) return;
             this.#grouped = !this.#grouped;
-            const el = e.currentTarget;
-            if (this.#grouped) {
-              el.classList.remove("fa-minus");
-              el.classList.add("fa-plus");
-            } else {
-              el.classList.remove("fa-plus");
-              el.classList.add("fa-minus");
-            }
-            this.#renderOptions();
-            this.#dirty = true;
+            this.#groupedChanged();
           });
         }
 
@@ -271,6 +284,20 @@
           });
         }
         this.#selectElement.innerHTML = Array.from(optionElements).join("");
+      }
+
+      #groupedChanged() {
+        if (!this.#hasGroups) return;
+        if (this.#grouped) {
+          this.#groupToggle.classList.remove("fa-minus");
+          this.#groupToggle.classList.add("fa-plus");
+        } else {
+          this.#groupToggle.classList.remove("fa-plus");
+          this.#groupToggle.classList.add("fa-minus");
+        }
+        this.#renderOptions();
+        this.#selected.invalidate();
+        this.#state.invalidate();
       }
 
       #isActiveFor(ping) {
@@ -312,6 +339,40 @@
         // Sort in descending order.
         return Array.from(counts).sort(([ka,a],[kb,b]) => b-a);
       }
+
+      #state = new Cached(() => {
+        let state = "";
+        if (this.#hasGroups) {
+          if (!this.#grouped) {
+            state += "e";
+          }
+        }
+
+        if (this.#selectElement.selectedOptions.length != this.#selectElement.options.length) {
+          state += JSON.stringify(Array.from(this.#selectElement.selectedOptions).map(opt => opt.value));
+        }
+
+        return state;
+      });
+
+      get state() {
+        return this.#state.value;
+      }
+
+      set state(state) {
+        if (state.startsWith("e")) {
+          state = state.slice(1);
+          this.#grouped = false;
+          this.#groupedChanged();
+        }
+        if (state.length > 0) {
+          const selected = new Set(JSON.parse(state));
+          for (const option of Array.from(this.#selectElement.options)) {
+            option.selected = selected.has(option.value);
+          }
+        }
+        setTimeout(() => this.#selectElement.dispatchEvent(new Event('change')), 0);
+      }
     }
 
     /* Entry Logic */
@@ -338,22 +399,25 @@
       createFilters();
     });
 
-    function getAnchor() {
-      var currentUrl = document.URL,
-        urlParts = currentUrl.split('#');
-      return (urlParts.length > 1) ? urlParts[1] : null;
-    }
-
-    function onLoad() {
-      var anchor = getAnchor();
-      if (anchor != null) {
-        //TODO load state
+    function loadState() {
+      const state = window.location.hash.substr(1);
+      if (state) {
+        for (const part of decodeURIComponent(state).split("&")) {
+          const [label, s] = part.split("=", 2);
+          const filter = filters.get(label);
+          if (filter) {
+            filter.state = s;
+          }
+        }
       }
-
-      loaded();
     }
 
-    window.onload = function() {onLoad();}
+    function storeState() {
+      const state = filters.values().filter(f => f.state !== "").map(f => `${f.label}=${f.state}`).toArray().join("&");
+      window.location.hash = state;
+    }
+
+    window.onload = loaded;
 
     function copyText(text) {
       if (typeof (navigator.clipboard) == 'undefined') {
@@ -527,6 +591,7 @@
 
       document.getElementById("metainfo").innerHTML = `Crash ping data from the past 7 days, processed at ${new Date(meta.processUnixTime * 1000)}.`;
 
+      loadState();
       updateFilters();
     }
 
@@ -604,6 +669,8 @@
       addTooltips("hdr-signature");
       document.getElementById("detail").style.visibility = 'hidden';
       document.getElementById("ping-detail").style.visibility = 'hidden';
+
+      storeState();
     }
   </script>
 </head>
