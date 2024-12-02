@@ -1051,7 +1051,7 @@ def generateTopCrasherIds(output, reports, reportLowerClientLimit):
 
       configurationCount.setdefault(configuration, 0)
       clientCount.setdefault(client, 0)
-      if configurationCount[configuration] >= IdsPerConfiguration or clientCount[client] >= IdsPerClient or 'minidumphash' not in r:
+      if configurationCount[configuration] >= IdsPerConfiguration or clientCount[client] >= IdsPerClient or 'minidumphash' not in r or r['minidumphash'] is None:
         continue
 
       configurationCount[configuration] += 1
