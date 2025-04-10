@@ -18,29 +18,30 @@ task-defaults:
     docker-image: {in-tree: linux}
     max-run-time: 1800
 
-tasks:
-  site:
-    name: deploy-site
-    description: "Deploy the crash ping website."
-    scopes:
-      - secrets:get:project/mozilla/process-top-crashes/ci
-    soft-dependencies:
-      - process-pings
-    run:
-      using: run-task
-      cache-dotcache: true
-      cwd: '{checkout}'
-      command:
-        - bash
-        - -euo
-        - pipefail
-        - -c
-        - |
-          SECRETS=$(curl -sSLf http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci)
-          export NETLIFY_AUTH_TOKEN=$(echo $SECRETS | jq -r .secret.netlify.token)
-          export NETLIFY_SITE_ID=$(echo $SECRETS | jq -r .secret.netlify.site_id)
-
-          curl -sSLf https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/mozilla.v2.process-top-crashes.latest.process-pings/artifacts/public/processed.tar.gz | tar -xzf -
-          python3 sitePostProcess.py
-          # The netlify cli app prints auth information, so we must redirect stdout to not have it ending up in the logs. See bug 1939447.
-          netlify deploy --prod >/dev/null
+# Disabled; we now deploy from https://github.com/mozilla/crash-pings automatically through netlify.
+#tasks:
+#  site:
+#    name: deploy-site
+#    description: "Deploy the crash ping website."
+#    scopes:
+#      - secrets:get:project/mozilla/process-top-crashes/ci
+#    soft-dependencies:
+#      - process-pings
+#    run:
+#      using: run-task
+#      cache-dotcache: true
+#      cwd: '{checkout}'
+#      command:
+#        - bash
+#        - -euo
+#        - pipefail
+#        - -c
+#        - |
+#          SECRETS=$(curl -sSLf http://taskcluster/secrets/v1/secret/project/mozilla/process-top-crashes/ci)
+#          export NETLIFY_AUTH_TOKEN=$(echo $SECRETS | jq -r .secret.netlify.token)
+#          export NETLIFY_SITE_ID=$(echo $SECRETS | jq -r .secret.netlify.site_id)
+#
+#          curl -sSLf https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/mozilla.v2.process-top-crashes.latest.process-pings/artifacts/public/processed.tar.gz | tar -xzf -
+#          python3 sitePostProcess.py
+#          # The netlify cli app prints auth information, so we must redirect stdout to not have it ending up in the logs. See bug 1939447.
+#          netlify deploy --prod >/dev/null
