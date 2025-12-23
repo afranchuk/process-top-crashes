@@ -10,7 +10,7 @@ task-defaults:
   run-on-tasks-for:
     - cron
     - github-push
-  worker-type: t-linux-large
+  worker-type: t-linux
   worker:
     docker-image: {in-tree: linux}
     max-run-time: 36000
